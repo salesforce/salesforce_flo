@@ -1,20 +1,63 @@
 # SalesforceFlo
+[![Gem Version](https://badge.fury.io/rb/salesforce_flo.svg)](https://badge.fury.io/rb/salesforce_flo) [![Code Climate](https://codeclimate.com/github/codeclimate/codeclimate/badges/gpa.svg)](https://codeclimate.com/github/codeclimate/codeclimate) [![Build Status](https://semaphoreci.com/api/v1/justinpowers/salesforce_flo/branches/master/shields_badge.svg)](https://semaphoreci.com/justinpowers/salesforce_flo)
 
-A Salesforce plugin for Flo
+SalesforceFlo is a Salesforce plugin for the Flo workflow automation library.  If you aren't familiar with Flo, then please start [here](https://github.com/salesforce/flo)
+
+## Installation
+
+Add this line to your application's Gemfile:
+
+```ruby
+gem 'salesforce_flo'
+```
+
+And then execute:
+
+    $ bundle
+
+Or install it yourself as:
+
+    $ gem install salesforce_flo
+
+## Configuration
+
+In your Flo configuration file, configure salesforce inside the `config` block
+
+```ruby
+config do |cfg|
+  cfg.provider :salesforce_flo, { client: Restforce.new(oauth_token: 'access_token', instance_url: 'instance url', api_version: '38.0') }
+end
+```
+
+See the [RestForce gem](https://github.com/ejholmes/restforce) for information on setting up the client.
+
+## Oauth Authentication Flow
+
+The RestForce gem does not provide a mechanism for initiating the oauth authorization flow to retrieve the initial access token.  If you wish to authenticate with Oauth, you can use the Oauth wrapper
+
+```ruby
+config do |cfg|
+cfg.provider :salesforce_flo, { client: SalesforceFlo::Authentication::OauthWrapper.new }
+end
+```
+
+This enables the browser Oauth authorization flow.  It will open up the Salesforce authorization flow in the browser so that the user can authorize SalesforceFlo to make requests on the user's behalf.  It will also open up a local webserver on port 8000, which will accept the redirect at the end of the authorization flow so that SalesforceFlo can obtain the access token.
 
 ## Usage
 
-TODO: Write usage instructions here
-
-## Development
-
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
-
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+Specify the commands you wish to run in the `register_command` block.  For example
+```ruby
+# Updates the `agf__ADM_Work__c` object, so that the `agf__Status__c` field is set to 'In Progress'
+perform :salesforce_flo, :update_object, { sobject: 'agf__ADM_Work__c', name: work_id, fields: { agf__Status__c: 'In Progress' } }
+```
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/salesforce/salesforce_flo. This project is intended to be a safe, welcoming space for collaboration.
+1. Fork it (http://github.com/your-github-username/salesforce_flo/fork )
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Commit your changes (`git commit -am 'Add some feature'`)
+4. Push to the branch (`git push origin my-new-feature`)
+5. Create new Pull Request
 
 
 ## License

@@ -1,31 +1,7 @@
-# Copyright (c) 2017, Salesforce.com, Inc.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# * Redistributions of source code must retain the above copyright notice, this
-# list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-# this list of conditions and the following disclaimer in the documentation
-# and/or other materials provided with the distribution.
-#
-# * Neither the name of Salesforce.com nor the names of its contributors may be
-# used to endorse or promote products derived from this software without
-# specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
+# Copyright © 2017, Salesforce.com, Inc.
+# All Rights Reserved.
+# Licensed under the BSD 3-Clause license.
+# For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
 
 require 'webrick'
 require 'launchy'
@@ -37,16 +13,38 @@ module SalesforceFlo
     class OauthWrapper
 
       SFDC_URI = 'https://login.salesforce.com/services/oauth2/authorize'
+      DEFAULT_CLIENT_ID = '3MVG9CEn_O3jvv0zPd34OzgiH037XR5Deez3GW8PpsMdzoxecdKUW1s.8oYU9GoLS2Tykr4qTrCizaQBjRXNT'
+      DEFAULT_REDIRECT_HOSTNAME = 'localhost'
+      DEFAULT_LISTEN_PORT = '3835'
 
+      # Creates a new OauthWrapper instance
+      #
+      # @param [Hash] opts The options needed to create the provider
+      # @option opts [String] :client_id The client id of the connected app for Oauth authorization
+      # @option opts [String] :redirect_hostname (http://localhost:3835) The hostname portion of the uri
+      # that the user will be redirected to at the end of the Oauth authorization flow.  This MUST match the
+      # redirect URL specified in the connected app settings.
+      # @option opts [String] :port (3835) The port that the user will be redirected to at the end of the Oauth
+      # flow.  This will be appended to the redirect_hostname
+      # @option opts [#call] :client An object that produces a client when called with initialization options
+      # @raise [ArgumentError] If client object does not respond_to?(:call)
+      #
       def initialize(opts={})
-        @client_id = opts[:client_id]
-        @redirect_uri = opts[:redirect_uri]
+        @client_id = opts[:client_id] || DEFAULT_CLIENT_ID
+        @redirect_hostname = opts[:redirect_hostname] || DEFAULT_REDIRECT_HOSTNAME
+        @port = opts[:port] || DEFAULT_LISTEN_PORT
         @client = opts[:client] || -> (options) { Restforce.new(options) }
         raise ArgumentError.new(':client must respond to #call, try a lambda') unless @client.respond_to?(:call)
       end
 
+      # Starts a temporary webserver on the specified port, and initiates an Oauth authorization flow, which will
+      # redirect the user back to localhost on the specified port.
+      #
+      # @param [Hash] opts Options that will be passed to the client when called, which will be merged with the response
+      # from the salesforce that includes the access token
+      # @return The result of invoking #call on the client object
       def call(opts={})
-        server = WEBrick::HTTPServer.new :Port => 8000
+        server = WEBrick::HTTPServer.new :Port => @redirect_hostname
         auth_details = {}
 
         server.mount_proc('/') do |req, res|
@@ -73,7 +71,11 @@ module SalesforceFlo
       private
 
       def oauth_query_string
-        query_string = URI.encode_www_form([['client_id', @client_id], ['response_type', 'token'], ['redirect_uri', @redirect_uri]])
+        query_string = URI.encode_www_form([['client_id', @client_id], ['response_type', 'token'], ['redirect_uri', redirect_uri]])
+      end
+
+      def redirect_uri
+        "http://#{@redirect_hostname}:#{@port}"
       end
 
       def js_template
