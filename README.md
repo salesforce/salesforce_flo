@@ -1,5 +1,5 @@
 # SalesforceFlo
-[![Gem Version](https://badge.fury.io/rb/salesforce_flo.svg)](https://badge.fury.io/rb/salesforce_flo) [![Code Climate](https://codeclimate.com/github/codeclimate/codeclimate/badges/gpa.svg)](https://codeclimate.com/github/codeclimate/codeclimate) [![Build Status](https://semaphoreci.com/api/v1/justinpowers/salesforce_flo/branches/master/shields_badge.svg)](https://semaphoreci.com/justinpowers/salesforce_flo)
+[![Gem Version](https://badge.fury.io/rb/salesforce_flo.svg)](https://badge.fury.io/rb/salesforce_flo) [![Code Climate](https://codeclimate.com/github/salesforce/salesforce_flo/badges/gpa.svg)](https://codeclimate.com/github/salesforce/salesforce_flo) [![Build Status](https://semaphoreci.com/api/v1/justinpowers/salesforce_flo/branches/master/shields_badge.svg)](https://semaphoreci.com/justinpowers/salesforce_flo)
 
 SalesforceFlo is a Salesforce plugin for the Flo workflow automation library.  If you aren't familiar with Flo, then please start [here](https://github.com/salesforce/flo)
 
