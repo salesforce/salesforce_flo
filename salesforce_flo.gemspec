@@ -28,4 +28,5 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'restforce'
   spec.add_dependency 'launchy'
+  spec.add_dependency 'flo', '>= 0.0.3'
 end

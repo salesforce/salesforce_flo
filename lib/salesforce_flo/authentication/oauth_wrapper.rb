@@ -12,7 +12,8 @@ module SalesforceFlo
   module Authentication
     class OauthWrapper
 
-      SFDC_URI = 'https://login.salesforce.com/services/oauth2/authorize'
+      OAUTH_ENDPOINT = '/services/oauth2/authorize'
+      AUTH_HOST = 'https://login.salesforce.com'
       DEFAULT_CLIENT_ID = '3MVG9CEn_O3jvv0zPd34OzgiH037XR5Deez3GW8PpsMdzoxecdKUW1s.8oYU9GoLS2Tykr4qTrCizaQBjRXNT'
       DEFAULT_REDIRECT_HOSTNAME = 'localhost'
       DEFAULT_LISTEN_PORT = '3835'
@@ -34,6 +35,7 @@ module SalesforceFlo
         @redirect_hostname = opts[:redirect_hostname] || DEFAULT_REDIRECT_HOSTNAME
         @port = opts[:port] || DEFAULT_LISTEN_PORT
         @client = opts[:client] || -> (options) { Restforce.new(options) }
+
         raise ArgumentError.new(':client must respond to #call, try a lambda') unless @client.respond_to?(:call)
       end
 
@@ -44,7 +46,7 @@ module SalesforceFlo
       # from the salesforce that includes the access token
       # @return The result of invoking #call on the client object
       def call(opts={})
-        server = WEBrick::HTTPServer.new :Port => @redirect_hostname
+        server = WEBrick::HTTPServer.new(Port: @port)
         auth_details = {}
 
         server.mount_proc('/') do |req, res|
@@ -60,11 +62,11 @@ module SalesforceFlo
 
         trap "INT" do server.shutdown end
 
-        Launchy.open("#{SFDC_URI}?#{oauth_query_string}")
+        Launchy.open("#{AUTH_HOST}#{OAUTH_ENDPOINT}?#{oauth_query_string}")
         server.start
 
-        merged_options = opts.merge(auth_details).merge(client_id: @client_id, api_version: '38.0').inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
-
+        merged_options = opts.merge(auth_details).merge(client_id: @client_id, api_version: '39.0').inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
+        merged_options[:oauth_token] = merged_options[:access_token] if merged_options[:access_token]
         @client.call(merged_options)
       end
 
@@ -102,7 +104,7 @@ module SalesforceFlo
 
               function sendHashParams() {
                 xhr = new XMLHttpRequest();
-                var url = "http://localhost:8000/send_token";
+                var url = "http://localhost:#{@port}/send_token";
                 xhr.open("POST", url, true);
                 xhr.setRequestHeader("Content-type", "application/json");
                 var data = JSON.stringify(getHashParams());
