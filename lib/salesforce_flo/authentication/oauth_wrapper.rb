@@ -13,7 +13,7 @@ module SalesforceFlo
     class OauthWrapper
 
       OAUTH_ENDPOINT = '/services/oauth2/authorize'
-      AUTH_HOST = 'https://login.salesforce.com'
+      DEFAULT_AUTH_HOST = 'https://login.salesforce.com'
       DEFAULT_CLIENT_ID = '3MVG9CEn_O3jvv0zPd34OzgiH037XR5Deez3GW8PpsMdzoxecdKUW1s.8oYU9GoLS2Tykr4qTrCizaQBjRXNT'
       DEFAULT_REDIRECT_HOSTNAME = 'localhost'
       DEFAULT_LISTEN_PORT = '3835'
@@ -26,6 +26,8 @@ module SalesforceFlo
       # that the user will be redirected to at the end of the Oauth authorization flow.  This MUST match the
       # redirect URL specified in the connected app settings.
       # @option opts [String] :port (3835) The port that the user will be redirected to at the end of the Oauth
+      # @option opts [String] :auth_host (https://login.salesforce.com) The hostname where the user will be directed for
+      #   authentication.  This is useful if your org utilizes a custom domain.
       # flow.  This will be appended to the redirect_hostname
       # @option opts [#call] :client An object that produces a client when called with initialization options
       # @raise [ArgumentError] If client object does not respond_to?(:call)
@@ -34,6 +36,7 @@ module SalesforceFlo
         @client_id = opts[:client_id] || DEFAULT_CLIENT_ID
         @redirect_hostname = opts[:redirect_hostname] || DEFAULT_REDIRECT_HOSTNAME
         @port = opts[:port] || DEFAULT_LISTEN_PORT
+        @auth_host = opts[:auth_host] || DEFAULT_AUTH_HOST
         @client = opts[:client] || -> (options) { Restforce.new(options) }
 
         raise ArgumentError.new(':client must respond to #call, try a lambda') unless @client.respond_to?(:call)
@@ -62,7 +65,7 @@ module SalesforceFlo
 
         trap "INT" do server.shutdown end
 
-        Launchy.open("#{AUTH_HOST}#{OAUTH_ENDPOINT}?#{oauth_query_string}")
+        Launchy.open("#{@auth_host}#{OAUTH_ENDPOINT}?#{oauth_query_string}")
         server.start
 
         merged_options = opts.merge(auth_details).merge(client_id: @client_id, api_version: '39.0').inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
