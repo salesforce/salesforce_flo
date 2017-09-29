@@ -33,11 +33,11 @@ module SalesforceFlo
       # @raise [ArgumentError] If client object does not respond_to?(:call)
       #
       def initialize(opts={})
-        @client_id = opts[:client_id] || DEFAULT_CLIENT_ID
-        @redirect_hostname = opts[:redirect_hostname] || DEFAULT_REDIRECT_HOSTNAME
-        @port = opts[:port] || DEFAULT_LISTEN_PORT
-        @auth_host = opts[:auth_host] || DEFAULT_AUTH_HOST
-        @client = opts[:client] || -> (options) { Restforce.new(options) }
+        @client_id = opts.fetch(:client_id, DEFAULT_CLIENT_ID)
+        @redirect_hostname = opts.fetch(:redirect_hostname, DEFAULT_REDIRECT_HOSTNAME)
+        @port = opts.fetch(:port, DEFAULT_LISTEN_PORT)
+        @auth_host = opts.fetch(:auth_host, DEFAULT_AUTH_HOST)
+        @client = opts.fetch(:client, -> (options) { Restforce.new(options) })
 
         raise ArgumentError.new(':client must respond to #call, try a lambda') unless @client.respond_to?(:call)
       end
